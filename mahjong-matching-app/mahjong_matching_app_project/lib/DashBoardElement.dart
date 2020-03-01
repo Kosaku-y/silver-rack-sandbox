@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
-import 'Entity.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'Entity/PageParts.dart';
+import 'Entity/User.dart';
+import 'Repository/CommonData.dart';
 
 class PieChartDetailPage extends StatefulWidget {
   @override
@@ -15,7 +17,8 @@ class PieChartDetailPage extends StatefulWidget {
 class PieChartDetailPageState extends State<PieChartDetailPage> {
   List<charts.Series<Data, String>> seriesPieData;
   PageParts set = new PageParts();
-  User user = User();
+  CommonData cd = CommonData();
+  User user = new User();
   final userReference = FirebaseDatabase.instance.reference().child("gmail");
   int rank = int.parse("21");
   int max, remain;
@@ -30,17 +33,17 @@ class PieChartDetailPageState extends State<PieChartDetailPage> {
   }
 
   generateData() {
-    for (int r in user.rankMap.keys) {
+    for (int r in cd.rankMap.keys) {
       if (rank <= r) {
         max = r;
-        rankColorString = user.rankMap[r];
+        rankColorString = cd.rankMap[r];
         break;
       }
     }
     remain = max - rank;
 //  int rank = int.parse(user.rank);
     var pieData = [
-      new Data('rank', rank, user.colorMap[rankColorString].withOpacity(0.8)),
+      new Data('rank', rank, cd.colorMap[rankColorString].withOpacity(0.8)),
       new Data('brank', remain, Colors.white.withOpacity(0.0)),
     ];
 
@@ -58,6 +61,14 @@ class PieChartDetailPageState extends State<PieChartDetailPage> {
 
   Widget build(BuildContext context) {
     return new Scaffold(
+      appBar: AppBar(
+        elevation: 2.0,
+        backgroundColor: set.baseColor,
+        title: Text('現在のランク',
+            style: TextStyle(
+              color: set.pointColor,
+            )),
+      ),
       backgroundColor: set.backGroundColor,
       body: Container(
         padding: EdgeInsets.all(16.0),
@@ -70,33 +81,23 @@ class PieChartDetailPageState extends State<PieChartDetailPage> {
                     fontSize: 24.0,
                     fontWeight: FontWeight.bold,
                   )),
-//              TextSpan:(
-//                children:<TextSpan>[
-//                TextSpan(text:'現在のランク:$rankColorString',
-//                    style: TextStyle(color: set.fontColor, fontSize: 20.0)),
-//                ],
-//              )
               Text.rich(
                 TextSpan(
                   children: <TextSpan>[
                     TextSpan(
-                        text: '現在のランク:',
-                        style: TextStyle(color: set.fontColor, fontSize: 20.0)),
+                        text: '現在のランク:', style: TextStyle(color: set.fontColor, fontSize: 20.0)),
                     TextSpan(
                         text: '$rankColorString',
-                        style: TextStyle(
-                            color: user.colorMap[rankColorString],
-                            fontSize: 25.0)),
+                        style: TextStyle(color: cd.colorMap[rankColorString], fontSize: 25.0)),
                   ],
                 ),
               ),
-              Text('ランクアップまであと $remain',
-                  style: TextStyle(color: set.fontColor, fontSize: 20.0)),
+              Text('ランクアップまであと $remain', style: TextStyle(color: set.fontColor, fontSize: 20.0)),
               Expanded(
                 child: pieChart(),
               ),
               set.backButton(
-                onTap: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(context),
               ),
             ],
           ),
@@ -109,12 +110,9 @@ class PieChartDetailPageState extends State<PieChartDetailPage> {
     return charts.PieChart(seriesPieData,
         animate: true,
         animationDuration: Duration(seconds: 2),
-        defaultRenderer: new charts.ArcRendererConfig(
-            arcWidth: 70,
-            arcRendererDecorators: [
-              new charts.ArcLabelDecorator(
-                  labelPosition: charts.ArcLabelPosition.inside)
-            ]));
+        defaultRenderer: new charts.ArcRendererConfig(arcWidth: 70, arcRendererDecorators: [
+          new charts.ArcLabelDecorator(labelPosition: charts.ArcLabelPosition.inside)
+        ]));
   }
 }
 
@@ -128,27 +126,25 @@ class Data {
 class MahjongHandPage extends StatelessWidget {
   PageParts set = PageParts();
   List<MahjongHand> entries = [
-    MahjongHand(
-        "断么(タンヤオ)", "1", "中張牌（数牌の2〜8）のみを使って手牌を完成させた場合に成立する。断ヤオと略すことが多い。"),
-    MahjongHand("平和(ピンフ)", "1", "面子が全て順子で、雀頭が役牌でなく、待ちが両面待ちになっている場合に成立する。")
+    MahjongHand("断么(タンヤオ)", "1", "中張牌（数牌の2〜8）のみを使って手牌を完成させた場合に成立する。断ヤオと略すことが多い。"),
+    MahjongHand("平和(ピンフ)", "1", "面子が全て順子で、雀頭が役牌でなく、待ちが両面待ちになっている場合に成立する。"),
   ];
   MahjongHandPage();
   //画面全体のビルド
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: new AppBar(
+        title: new Text("役一覧", style: TextStyle(color: set.pointColor)),
+        backgroundColor: set.baseColor,
+      ),
       backgroundColor: set.backGroundColor,
       body: Container(
           padding: const EdgeInsets.all(20.0),
           child: new Column(
             children: <Widget>[
-              Text('役一覧',
-                  style: TextStyle(
-                      color: set.fontColor,
-                      backgroundColor: set.backGroundColor)),
               Expanded(
                 child: ListView.builder(
-                  //padding: const EdgeInsets.all(16.0),
                   itemBuilder: (BuildContext context, int index) {
                     return _buildRow(index);
                   },
@@ -158,7 +154,7 @@ class MahjongHandPage extends StatelessWidget {
               Divider(
                 height: 8.0,
               ),
-              set.backButton(onTap: () => Navigator.pop(context))
+              set.backButton(onPressed: () => Navigator.pop(context))
 //              Container(
 //                  decoration: BoxDecoration(color: Theme.of(context).cardColor),
 //                  child: _buildInputArea()
@@ -192,8 +188,7 @@ class MahjongHandPage extends StatelessWidget {
               //crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Container(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                  padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
                   child: Row(// 1行目
                       children: <Widget>[
                     Expanded(
@@ -216,8 +211,7 @@ class MahjongHandPage extends StatelessWidget {
                             // 3.1.2行目
                             child: Text(
                               entries[index].explain,
-                              style: TextStyle(
-                                  fontSize: 12.0, color: set.fontColor),
+                              style: TextStyle(fontSize: 12.0, color: set.fontColor),
                             ),
                           ),
                         ],

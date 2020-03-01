@@ -1,199 +1,262 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'EventSearch.dart';
-import 'Recritment.dart';
-import 'NewHome.dart';
-import 'Entity.dart';
-import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter_app2/Splash.dart';
+import 'Entity/PageParts.dart';
+import 'package:flutter_app2/Widget/TalkRoomPage.dart';
+import 'package:flutter_app2/Widget/SettingPage.dart';
+import 'Widget/EventSearchPage.dart';
+import 'Entity/User.dart';
+import 'Widget/NewHomePage.dart';
 
 //ホーム画面のrun
-void main() => runApp(new MaterialApp(
+void main() {
+  PageParts parts = PageParts();
+  return runApp(
+    new MaterialApp(
       title: "Home",
-      home: new Home(),
-    ));
+      home: new Splash(),
+      //theme: parts.defaultTheme,
+    ),
+  );
+}
 
 /*----------------------------------------------
 
-ホーム(BottomNavigationBar)クラス
+ホーム(MainPage)クラス
 
 ----------------------------------------------*/
-class Home extends StatefulWidget {
+
+class MainPage extends StatefulWidget {
+  User user;
+  String message; //前の画面からの遷移の場合はSnackBarで処理結果を表示する
+  MainPage({Key key, @required this.user, @required this.message}) : super(key: key);
   @override
-  State<StatefulWidget> createState() {
-    return new HomeState();
-  }
+  _MainPageState createState() => _MainPageState();
 }
 
-class HomeState extends State<Home> {
-  int currentIndex = 0;
-  PageParts set = new PageParts();
-
-  List<Widget> tabs = [
-    NewHomeManage(),
-    //EventManage(key: PageStorageKey('EventManage'),),
-    EventManage(),
-    RecruitmentPage("createNew"),
-    SampleTabItem("Message", Color(0xff160840)),
-  ];
-  Map<Widget, GlobalKey<NavigatorState>> navigatorKeys = {
-    NewHomeManage(): GlobalKey<NavigatorState>(),
-    EventManage(): GlobalKey<NavigatorState>(),
-    RecruitmentPage("createNew"): GlobalKey<NavigatorState>(),
-    SampleTabItem("Message", Color(0xff160840)): GlobalKey<NavigatorState>(),
+class _MainPageState extends State<MainPage> {
+  TabItem _currentTab = TabItem.NewHome;
+  List<Widget> tabs;
+  PageParts set = PageParts();
+  Map<TabItem, GlobalKey<NavigatorState>> _navigatorKeys = {
+    TabItem.NewHome: GlobalKey<NavigatorState>(),
+    TabItem.EventManage: GlobalKey<NavigatorState>(),
+    TabItem.RoomPage: GlobalKey<NavigatorState>(),
+    TabItem.Setting: GlobalKey<NavigatorState>(),
   };
 
-  void onTabTapped(int index) {
-    setState(() {
-      currentIndex = index;
-    });
+  void onSelect(TabItem tabItem) {
+    //現在選択されているタブが選択された場合,最初までpop
+    if (_currentTab == tabItem) {
+      _navigatorKeys[tabItem].currentState.popUntil((route) => route.isFirst);
+    } else {
+      setState(() {
+        _currentTab = tabItem;
+      });
+    }
   }
 
   @override
   void initState() {
     super.initState();
+    tabs = [
+      Home(user: widget.user),
+      EventManagePage(user: widget.user),
+      TalkRoomPage(widget.user),
+      SettingPage(user: widget.user),
+    ];
+  }
+
+  Future<bool> onWillPop() async {
+    final isFirstRoute = !await _navigatorKeys[_currentTab].currentState.maybePop();
+    if (isFirstRoute) {
+      if (_currentTab != TabItem.NewHome) {
+        onSelect(TabItem.NewHome);
+      }
+      return false;
+    }
+    return isFirstRoute;
   }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async =>
-          !await navigatorKeys[currentIndex].currentState.maybePop(),
+      onWillPop: onWillPop,
       child: Scaffold(
-        appBar: new AppBar(
-          title:
-              new Text("Matching App", style: TextStyle(color: set.fontColor)),
-          backgroundColor: set.baseColor,
-        ),
-//        body: Stack(children: <Widget>[
-//          _buildOffstageNavigator(NewHomeManage()),
-//          _buildOffstageNavigator(EventManage()),
-//          _buildOffstageNavigator(RecruitmentPage("createNew")),
-//          _buildOffstageNavigator(SampleTabItem("Message", Color(0xff160840))),
-//        ]),
-        body: tabs[currentIndex],
-        bottomNavigationBar: BottomNavigationBar(
-          onTap: onTabTapped,
-          type: BottomNavigationBarType.fixed,
-          fixedColor: set.fontColor,
-          unselectedItemColor: Colors.white,
-          backgroundColor: set.baseColor,
-          currentIndex: currentIndex,
-          items: [
-            BottomNavigationBarItem(
-              icon: new Icon(Icons.home),
-              backgroundColor: set.baseColor,
-              title: new Text('Home'),
+        body: Stack(
+          children: <Widget>[
+            _buildTabItem(
+              TabItem.NewHome,
+              '/NewHome',
             ),
-            BottomNavigationBarItem(
-              icon:
-                  new Icon(const IconData(59574, fontFamily: 'MaterialIcons')),
-              backgroundColor: set.baseColor,
-              title: new Text('Search'),
+            _buildTabItem(
+              TabItem.EventManage,
+              '/EventManage',
             ),
-            BottomNavigationBarItem(
-                icon: new Icon(Icons.person),
-                backgroundColor: set.baseColor,
-                title: new Text('Recruitment')),
-            BottomNavigationBarItem(
-                icon: new Icon(Icons.message),
-                backgroundColor: set.baseColor,
-                title: new Text("Message")),
+            _buildTabItem(
+              TabItem.RoomPage,
+              '/RoomPage',
+            ),
+            _buildTabItem(
+              TabItem.Setting,
+              '/Setting',
+            ),
           ],
+        ),
+        bottomNavigationBar: BottomNavigation(
+          currentTab: _currentTab,
+          onSelect: onSelect,
         ),
       ),
     );
   }
 
-//  Widget _buildOffstageNavigator(Widget widget) {
-//    return Offstage(
-//      offstage: tabs[currentIndex] != widget,
-////      child: Navigator(
-////        navigatorKey: navigatorKeys[widget],
-////        tabItem: tabItem,
-////      ),
-//      child:Navigator(
-//        key:  navigatorKeys[widget],
-//        initialRoute: TabNavigatorRoutes.root,
-//        onGenerateRoute: (routeSettings) {
-//          return MaterialPageRoute(
-//              builder: (context) => routeBuilders[routeSettings.name](context));
-//        });
-//        ,
-//    );
-//  }
+  Widget _buildTabItem(TabItem tabItem, String root) {
+    return Offstage(
+      offstage: _currentTab != tabItem,
+      child: TabNavigator(
+        navigationKey: _navigatorKeys[tabItem],
+        tabItem: tabItem,
+        routerName: root,
+        user: widget.user,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
 }
 
-//class TabNavigator extends StatelessWidget {
-//  TabNavigator({this.navigatorKey, this.widget});
-//  final GlobalKey<NavigatorState> navigatorKey;
-//  final Widget widget;
-//
-//  @override
-//  Widget build(BuildContext context) {
-//    var routeBuilders = _routeBuilders(context);
-//    return Navigator();
-//  }
-//}
+class TabNavigator extends StatelessWidget {
+  const TabNavigator(
+      {Key key,
+      @required this.tabItem,
+      @required this.routerName,
+      @required this.navigationKey,
+      @required this.user})
+      : super(key: key);
+
+  final User user;
+  final TabItem tabItem;
+  final String routerName;
+  final GlobalKey<NavigatorState> navigationKey;
+
+  Map<String, Widget Function(BuildContext)> _routerBuilder(BuildContext context) => {
+        '/NewHome': (context) => new Home(user: user),
+        '/EventManage': (context) => new EventManagePage(user: user),
+        '/RoomPage': (context) => new TalkRoomPage(user),
+        '/Setting': (context) => new SettingPage(user: user)
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final routerBuilder = _routerBuilder(context);
+
+    return Navigator(
+      key: navigationKey,
+      initialRoute: '/',
+      onGenerateRoute: (settings) {
+        return MaterialPageRoute<Widget>(
+          builder: (context) {
+            return routerBuilder[routerName](context);
+          },
+        );
+      },
+    );
+  }
+}
 
 /*----------------------------------------------
 
-ホーム(メインページ)クラス
+BottomNavigationBar定義 enum
 
 ----------------------------------------------*/
-class Main extends StatefulWidget {
-  const Main() : super();
 
-  // アロー関数を用いて、Stateを呼ぶ
-  @override
-  MainState createState() => new MainState();
+enum TabItem {
+  NewHome,
+  EventManage,
+  RoomPage,
+  Setting,
 }
 
-class MainState extends State<Main> {
+/*----------------------------------------------
+
+BottomNavigationBarのWidgetクラス
+
+----------------------------------------------*/
+
+const tabTitle = <TabItem, String>{
+  TabItem.NewHome: 'ホーム',
+  TabItem.EventManage: 'イベント',
+  TabItem.RoomPage: 'トーク',
+  TabItem.Setting: '設定',
+};
+const tabIcon = <TabItem, IconData>{
+  TabItem.NewHome: Icons.home,
+  TabItem.EventManage: IconData(59574, fontFamily: 'MaterialIcons'),
+  TabItem.RoomPage: Icons.message,
+  TabItem.Setting: Icons.settings,
+};
+
+class BottomNavigation extends StatelessWidget {
+  const BottomNavigation({
+    Key key,
+    this.currentTab,
+    this.onSelect,
+  }) : super(key: key);
+
+  final TabItem currentTab;
+  final ValueChanged<TabItem> onSelect;
+
   @override
   Widget build(BuildContext context) {
-    return new Scaffold(
-      backgroundColor: Colors.white,
-      body: new Container(
-        child: new Center(
-          child: new Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              new Text('メイン',
-                  style: new TextStyle(
-                      color: Colors.white,
-                      fontSize: 36.0,
-                      fontWeight: FontWeight.bold))
-            ],
-          ),
+    PageParts set = PageParts();
+    return BottomNavigationBar(
+      items: <BottomNavigationBarItem>[
+        bottomItem(
+          context,
+          tabItem: TabItem.NewHome,
         ),
-      ),
+        bottomItem(
+          context,
+          tabItem: TabItem.EventManage,
+        ),
+        bottomItem(
+          context,
+          tabItem: TabItem.RoomPage,
+        ),
+        bottomItem(
+          context,
+          tabItem: TabItem.Setting,
+        )
+      ],
+      type: BottomNavigationBarType.fixed,
+      backgroundColor: set.baseColor,
+//      fixedColor: set.fontColor,
+//      unselectedItemColor: Colors.white,
+      onTap: (index) {
+        onSelect(TabItem.values[index]);
+      },
     );
   }
-}
 
-class SampleTabItem extends StatelessWidget {
-  final String title;
-  final Color color;
-  PageParts set = PageParts();
-
-  SampleTabItem(this.title, this.color) : super();
-
-  @override
-  Widget build(BuildContext context) {
-    return new Scaffold(
-      backgroundColor: set.backGroundColor,
-      body: new Container(
-        child: new Center(
-          child: new Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              new Text(this.title,
-                  style: new TextStyle(
-                      color: Colors.white,
-                      fontSize: 36.0,
-                      fontWeight: FontWeight.bold))
-            ],
-          ),
+  BottomNavigationBarItem bottomItem(
+    BuildContext context, {
+    TabItem tabItem,
+  }) {
+    PageParts set = PageParts();
+    final color = currentTab == tabItem ? set.fontColor : Colors.white;
+    return BottomNavigationBarItem(
+      icon: Icon(
+        tabIcon[tabItem],
+        color: color,
+      ),
+      title: Text(
+        tabTitle[tabItem],
+        style: TextStyle(
+          color: color,
         ),
       ),
     );

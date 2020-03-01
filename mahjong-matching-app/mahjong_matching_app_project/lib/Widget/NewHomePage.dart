@@ -1,49 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
+import 'package:flutter_app2/Entity/PageParts.dart';
+import 'package:flutter_app2/Entity/User.dart';
+import 'package:flutter_app2/Repository/CommonData.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'Entity.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'DashBoardElement.dart';
 
-class NewHomeManage extends StatelessWidget {
-  @override
-  //EventManage({Key key}) : super(key: key);
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: NewHome(),
-      routes: <String, WidgetBuilder>{
-        '/Newhome': (BuildContext context) => new NewHome(),
-      },
-    );
-  }
-}
+import '../DashBoardElement.dart';
 
-class NewHome extends StatefulWidget {
-  final Widget child;
+class Home extends StatefulWidget {
   User user;
-  NewHome({Key key, this.child}) : super(key: key);
-  _NewHomeState createState() => _NewHomeState();
+  Home({Key key, this.user}) : super(key: key);
+  HomeState createState() => HomeState();
 }
 
-class _NewHomeState extends State<NewHome> {
+class HomeState extends State<Home> {
   PageParts set = new PageParts();
+  CommonData cd = CommonData();
   final userReference = FirebaseDatabase.instance.reference().child("gmail");
-  User user = User();
   int totalInfo = 0; //お知らせ件数
-  //後々はここでrankかUserを渡したい
-  PieChartDetailPageState pie = new PieChartDetailPageState();
-  int userRank = 21;
-  String userName = "Kosaku";
 
+  PieChartDetailPageState pie = new PieChartDetailPageState();
+  int userRank;
   String rankColorString;
-  _NewHomeState();
 
   @override
   void initState() {
     super.initState();
-    for (int r in user.rankMap.keys) {
+    userRank = int.parse(widget.user.rank);
+    for (int r in cd.rankMap.keys) {
       if (userRank <= r) {
-        rankColorString = user.rankMap[r];
+        rankColorString = cd.rankMap[r];
         break;
       }
     }
@@ -54,15 +41,14 @@ class _NewHomeState extends State<NewHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        /*
         appBar: AppBar(
           elevation: 2.0,
           backgroundColor: set.baseColor,
-          title: Text('Dashboard',
-              style: TextStyle(color:set.fontColor, fontWeight: FontWeight.w700, fontSize: 30.0,)
-          ),
+          title: Text('ホーム',
+              style: TextStyle(
+                color: set.pointColor,
+              )),
         ),
-        */
         backgroundColor: set.backGroundColor,
         body: StaggeredGridView.count(
           crossAxisCount: 2,
@@ -72,11 +58,9 @@ class _NewHomeState extends State<NewHome> {
           children: <Widget>[
             Container(
               padding: const EdgeInsets.all(2.0),
-              child: Text('ようこそ　' + '$userName' + '　さん',
-                  style: TextStyle(
-                      color: set.fontColor,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 20.0)),
+              child: Text('ようこそ ${widget.user.name} さん',
+                  style:
+                      TextStyle(color: set.fontColor, fontWeight: FontWeight.w700, fontSize: 20.0)),
             ),
             _buildTile(
               Padding(
@@ -95,8 +79,7 @@ class _NewHomeState extends State<NewHome> {
                                   fontWeight: FontWeight.w700,
                                   fontSize: 20.0)),
                           Text('新着$totalInfo件',
-                              style: TextStyle(
-                                  color: set.fontColor, fontSize: 12.0)),
+                              style: TextStyle(color: set.fontColor, fontSize: 12.0)),
                           //                          Text('$totalInfo件', style: TextStyle(color: Colors.blueAccent)),
                         ],
                       ),
@@ -107,8 +90,7 @@ class _NewHomeState extends State<NewHome> {
                           child: Center(
                               child: Padding(
                             padding: const EdgeInsets.all(16.0),
-                            child: Icon(Icons.info,
-                                color: Colors.white, size: 30.0),
+                            child: Icon(Icons.info, color: Colors.white, size: 30.0),
                           )))
                     ]),
               ),
@@ -130,17 +112,14 @@ class _NewHomeState extends State<NewHome> {
                       Padding(padding: EdgeInsets.only(bottom: 12.0)),
                       Text('How to 役',
                           style: TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 20.0)),
-                      Text('役を覚えよう',
-                          style:
-                              TextStyle(color: set.fontColor, fontSize: 12.0)),
+                              color: Colors.black, fontWeight: FontWeight.w700, fontSize: 20.0)),
+                      Text('役を覚えよう', style: TextStyle(color: set.fontColor, fontSize: 12.0)),
                     ]),
               ),
               onTap: () => Navigator.push(
                 this.context,
                 MaterialPageRoute(
+                  settings: const RouteSettings(name: "/MahjongHand"),
                   builder: (context) => MahjongHandPage(),
                 ),
               ),
@@ -153,20 +132,17 @@ class _NewHomeState extends State<NewHome> {
 //                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text('Player rank',
-                        style: TextStyle(
-                            fontSize: 24.0, fontWeight: FontWeight.bold)),
+                        style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
                     Text.rich(
                       TextSpan(
                         children: <TextSpan>[
                           TextSpan(
                               text: '現在のランク:',
-                              style: TextStyle(
-                                  color: set.fontColor, fontSize: 12.0)),
+                              style: TextStyle(color: set.fontColor, fontSize: 12.0)),
                           TextSpan(
                               text: '$rankColorString',
-                              style: TextStyle(
-                                  color: user.colorMap[rankColorString],
-                                  fontSize: 12.0)),
+                              style:
+                                  TextStyle(color: cd.colorMap[rankColorString], fontSize: 12.0)),
                         ],
                       ),
                     ),
@@ -179,6 +155,7 @@ class _NewHomeState extends State<NewHome> {
               onTap: () => Navigator.push(
                 this.context,
                 MaterialPageRoute(
+                  settings: const RouteSettings(name: "/PieChartDetail"),
                   builder: (context) => new PieChartDetailPage(),
                 ),
               ),
@@ -195,15 +172,12 @@ class _NewHomeState extends State<NewHome> {
                           shape: CircleBorder(),
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
-                            child: Icon(Icons.show_chart,
-                                color: Colors.white, size: 30.0),
+                            child: Icon(Icons.show_chart, color: Colors.white, size: 30.0),
                           )),
                       Padding(padding: EdgeInsets.only(bottom: 12.0)),
                       Text('戦績',
                           style: TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 20.0)),
+                              color: Colors.black, fontWeight: FontWeight.w700, fontSize: 20.0)),
                       Text(
                         '勝敗分析をしよう',
                         style: TextStyle(color: set.fontColor, fontSize: 12.0),
@@ -222,9 +196,7 @@ class _NewHomeState extends State<NewHome> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Text('一言コメント欄',
-                              style: TextStyle(
-                                  color: set.fontColor, fontSize: 12.0)),
+                          Text('一言コメント欄', style: TextStyle(color: set.fontColor, fontSize: 12.0)),
                           Text('開発中',
                               style: TextStyle(
                                 color: Colors.black,
@@ -239,8 +211,7 @@ class _NewHomeState extends State<NewHome> {
                           child: Center(
                               child: Padding(
                             padding: EdgeInsets.all(12.0),
-                            child: Icon(Icons.store,
-                                color: Colors.white, size: 30.0),
+                            child: Icon(Icons.store, color: Colors.white, size: 30.0),
                           )))
                     ]),
               ),
@@ -271,5 +242,10 @@ class _NewHomeState extends State<NewHome> {
                     print('Not set yet');
                   },
             child: child));
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 }
