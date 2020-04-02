@@ -1,17 +1,21 @@
 import 'AuthStatus.dart';
 
+/*----------------------------------------------
+
+ユーザーEntityクラス
+
+----------------------------------------------*/
 class User {
   String _userId = "";
   String _name = "";
   String _age = "";
   String _sex = "";
-  String _rank = "";
-  String _score = "";
-  Map _event;
+  String _rank = "1";
+  List<String> _event = [];
   AuthStatus _status;
 
   User();
-  User.tmpUser(this._status, this._userId) : _rank = "0";
+  User.tmpUser(this._status, this._userId);
 
   User.fromMap(String userId, Map map)
       : _userId = userId,
@@ -19,7 +23,6 @@ class User {
         _age = map["age"],
         _sex = map["sex"],
         _rank = map["rank"],
-        _score = map["score"],
         _status = AuthStatus.signedIn;
 
   toJson() {
@@ -29,7 +32,6 @@ class User {
         "age:$age\n"
         "sex:$sex\n"
         "rank:$rank\n"
-        "score:$score\n"
         "-------------------------------\n");
     return {
       "userId": userId,
@@ -37,30 +39,13 @@ class User {
       "age": age,
       "sex": sex,
       "rank": rank,
-      "score": score,
     };
   }
 
   String get userId => _userId;
 
-  set userId(String value) {
-    _userId = value;
-  }
-
   String get name => _name;
-  set name(String value) {
-    _name = value;
-  }
-
-  Map get event => _event;
-  set event(Map value) {
-    _event = value;
-  }
-
-  String get score => _score;
-  set score(String value) {
-    _score = value;
-  }
+  set name(String value) => _name = value;
 
   String get rank => _rank;
   set rank(String value) {
@@ -78,7 +63,6 @@ class User {
   }
 
   AuthStatus get status => _status;
-
   set status(AuthStatus value) {
     _status = value;
   }

@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_app2/Splash.dart';
-import 'Entity/PageParts.dart';
-import 'package:flutter_app2/Widget/TalkRoomPage.dart';
-import 'package:flutter_app2/Widget/SettingPage.dart';
-import 'Widget/EventSearchPage.dart';
+import 'package:flutter_app2/SplashScreen.dart';
+import 'PageParts.dart';
 import 'Entity/User.dart';
-import 'Widget/NewHomePage.dart';
+import 'Screen/Event/EventSearchScreen.dart';
+import 'Screen/HomeScreen.dart';
+import 'Screen/Setting/SettingScreen.dart';
+import 'Screen/Talk/TalkRoomScreen.dart';
+import 'package:gradient_bottom_navigation_bar/gradient_bottom_navigation_bar.dart';
 
 //ホーム画面のrun
 void main() {
-  PageParts parts = PageParts();
+  //PageParts parts = PageParts();
   return runApp(
     new MaterialApp(
       title: "Home",
-      home: new Splash(),
+      home: new SplashScreen(),
       //theme: parts.defaultTheme,
     ),
   );
@@ -22,26 +23,36 @@ void main() {
 
 /*----------------------------------------------
 
-ホーム(MainPage)クラス
+main screen(BottomNavigation)クラス
 
 ----------------------------------------------*/
 
-class MainPage extends StatefulWidget {
-  User user;
-  String message; //前の画面からの遷移の場合はSnackBarで処理結果を表示する
-  MainPage({Key key, @required this.user, @required this.message}) : super(key: key);
+class MainScreen extends StatefulWidget {
+  final User user;
+  final String message; //前の画面からの遷移の場合はSnackBarで処理結果を表示する
+  MainScreen({Key key, @required this.user, @required this.message}) : super(key: key);
   @override
-  _MainPageState createState() => _MainPageState();
+  _MainScreenState createState() => _MainScreenState();
 }
 
-class _MainPageState extends State<MainPage> {
-  TabItem _currentTab = TabItem.NewHome;
+class _MainScreenState extends State<MainScreen> {
+  TabItem _currentTab = TabItem.Home;
   List<Widget> tabs;
   PageParts set = PageParts();
+  bool once = true;
+//  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
+//
+//  void _showSnackBar() {
+//    if (once) {
+//      _scaffoldKey.currentState.showSnackBar(new SnackBar(content: Text(widget.message)));
+//      once = false;
+//    }
+//  }
+
   Map<TabItem, GlobalKey<NavigatorState>> _navigatorKeys = {
-    TabItem.NewHome: GlobalKey<NavigatorState>(),
+    TabItem.Home: GlobalKey<NavigatorState>(),
     TabItem.EventManage: GlobalKey<NavigatorState>(),
-    TabItem.RoomPage: GlobalKey<NavigatorState>(),
+    TabItem.Room: GlobalKey<NavigatorState>(),
     TabItem.Setting: GlobalKey<NavigatorState>(),
   };
 
@@ -60,18 +71,19 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     tabs = [
-      Home(user: widget.user),
-      EventManagePage(user: widget.user),
-      TalkRoomPage(widget.user),
-      SettingPage(user: widget.user),
+      HomeScreen(user: widget.user),
+      EventManageScreen(user: widget.user),
+      TalkRoomScreen(widget.user),
+      SettingScreen(user: widget.user),
     ];
+    //_showSnackBar();
   }
 
   Future<bool> onWillPop() async {
     final isFirstRoute = !await _navigatorKeys[_currentTab].currentState.maybePop();
     if (isFirstRoute) {
-      if (_currentTab != TabItem.NewHome) {
-        onSelect(TabItem.NewHome);
+      if (_currentTab != TabItem.Home) {
+        onSelect(TabItem.Home);
       }
       return false;
     }
@@ -83,19 +95,20 @@ class _MainPageState extends State<MainPage> {
     return WillPopScope(
       onWillPop: onWillPop,
       child: Scaffold(
+        //key: _scaffoldKey,
         body: Stack(
           children: <Widget>[
             _buildTabItem(
-              TabItem.NewHome,
-              '/NewHome',
+              TabItem.Home,
+              '/Home',
             ),
             _buildTabItem(
               TabItem.EventManage,
               '/EventManage',
             ),
             _buildTabItem(
-              TabItem.RoomPage,
-              '/RoomPage',
+              TabItem.Room,
+              '/Room',
             ),
             _buildTabItem(
               TabItem.Setting,
@@ -114,11 +127,14 @@ class _MainPageState extends State<MainPage> {
   Widget _buildTabItem(TabItem tabItem, String root) {
     return Offstage(
       offstage: _currentTab != tabItem,
-      child: TabNavigator(
-        navigationKey: _navigatorKeys[tabItem],
-        tabItem: tabItem,
-        routerName: root,
-        user: widget.user,
+      child: TickerMode(
+        enabled: _currentTab == tabItem,
+        child: TabNavigator(
+          navigationKey: _navigatorKeys[tabItem],
+          tabItem: tabItem,
+          routerName: root,
+          user: widget.user,
+        ),
       ),
     );
   }
@@ -144,10 +160,10 @@ class TabNavigator extends StatelessWidget {
   final GlobalKey<NavigatorState> navigationKey;
 
   Map<String, Widget Function(BuildContext)> _routerBuilder(BuildContext context) => {
-        '/NewHome': (context) => new Home(user: user),
-        '/EventManage': (context) => new EventManagePage(user: user),
-        '/RoomPage': (context) => new TalkRoomPage(user),
-        '/Setting': (context) => new SettingPage(user: user)
+        '/Home': (context) => new HomeScreen(user: user),
+        '/EventManage': (context) => new EventManageScreen(user: user),
+        '/Room': (context) => new TalkRoomScreen(user),
+        '/Setting': (context) => new SettingScreen(user: user)
       };
 
   @override
@@ -175,9 +191,9 @@ BottomNavigationBar定義 enum
 ----------------------------------------------*/
 
 enum TabItem {
-  NewHome,
+  Home,
   EventManage,
-  RoomPage,
+  Room,
   Setting,
 }
 
@@ -188,15 +204,15 @@ BottomNavigationBarのWidgetクラス
 ----------------------------------------------*/
 
 const tabTitle = <TabItem, String>{
-  TabItem.NewHome: 'ホーム',
+  TabItem.Home: 'ホーム',
   TabItem.EventManage: 'イベント',
-  TabItem.RoomPage: 'トーク',
+  TabItem.Room: 'トーク',
   TabItem.Setting: '設定',
 };
 const tabIcon = <TabItem, IconData>{
-  TabItem.NewHome: Icons.home,
+  TabItem.Home: Icons.home,
   TabItem.EventManage: IconData(59574, fontFamily: 'MaterialIcons'),
-  TabItem.RoomPage: Icons.message,
+  TabItem.Room: Icons.message,
   TabItem.Setting: Icons.settings,
 };
 
@@ -213,11 +229,13 @@ class BottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     PageParts set = PageParts();
-    return BottomNavigationBar(
+    return GradientBottomNavigationBar(
+      backgroundColorStart: set.startGradient,
+      backgroundColorEnd: set.endGradient,
       items: <BottomNavigationBarItem>[
         bottomItem(
           context,
-          tabItem: TabItem.NewHome,
+          tabItem: TabItem.Home,
         ),
         bottomItem(
           context,
@@ -225,7 +243,7 @@ class BottomNavigation extends StatelessWidget {
         ),
         bottomItem(
           context,
-          tabItem: TabItem.RoomPage,
+          tabItem: TabItem.Room,
         ),
         bottomItem(
           context,
@@ -233,9 +251,6 @@ class BottomNavigation extends StatelessWidget {
         )
       ],
       type: BottomNavigationBarType.fixed,
-      backgroundColor: set.baseColor,
-//      fixedColor: set.fontColor,
-//      unselectedItemColor: Colors.white,
       onTap: (index) {
         onSelect(TabItem.values[index]);
       },

@@ -3,9 +3,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_app2/Entity/User.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:flutter_twitter_login/flutter_twitter_login.dart';
+//import 'package:flutter_twitter_login/flutter_twitter_login.dart';
+//import 'package:apple_sign_in/apple_sign_in.dart';
 import 'package:flutter_app2/Entity/AuthStatus.dart';
 
+/*----------------------------------------------
+
+ログインRepositoryクラス
+
+----------------------------------------------*/
 class LoginRepository {
   final FirebaseAuth _firebaseAuth;
   final GoogleSignIn _googleSignIn;
@@ -45,8 +51,35 @@ class LoginRepository {
     return _firebaseAuth.currentUser();
   }*/
 
+  /*------Appleサインイン機能------
+  Future signInWithApple() async {
+    final AuthorizationResult result = await AppleSignIn.performRequests([
+      AppleIdRequest(requestedScopes: [Scope.email, Scope.fullName])
+    ]);
+
+    switch (result.status) {
+      case AuthorizationStatus.authorized:
+        print("success");
+        print(result.credential.user);
+        // ログイン成功
+
+        break;
+
+      case AuthorizationStatus.error:
+        print("Sign in failed: ${result.error.localizedDescription}");
+
+        throw Exception(result.error.localizedDescription);
+        break;
+
+      case AuthorizationStatus.cancelled:
+        print('User cancelled');
+        break;
+    }
+  }
+  * */
+
   //fireBaseサインイン部分
-  Future<User> checkFireBaseLogin(FirebaseUser currentUser) async {
+  checkFireBaseLogin(FirebaseUser currentUser) async {
     final _mainReference = FirebaseDatabase.instance.reference().child("User");
     //メールアドレス正規化
     var userId = makeUserId(currentUser.email);
@@ -60,20 +93,33 @@ class LoginRepository {
         }
       });
       return user;
-    } catch (e) {}
+    } catch (e, stackTrace) {
+      print(e);
+      print(stackTrace);
+    }
   }
 
-  Future<FirebaseUser> isSignedIn() async {
-    final currentUser = await _firebaseAuth.currentUser();
-    return currentUser;
+  isSignedIn() async {
+    try {
+      final currentUser = await _firebaseAuth.currentUser();
+      return currentUser;
+    } catch (e, stackTrace) {
+      print(e);
+      print(stackTrace);
+    }
   }
 
   //ログアウト
   Future<void> signOut() async {
-    return Future.wait([
-      _firebaseAuth.signOut(),
-      _googleSignIn.signOut(),
-    ]);
+    try {
+      return Future.wait([
+        _firebaseAuth.signOut(),
+        _googleSignIn.signOut(),
+      ]);
+    } catch (e, stackTrace) {
+      print(e);
+      print(stackTrace);
+    }
   }
 
   String makeUserId(String key) {

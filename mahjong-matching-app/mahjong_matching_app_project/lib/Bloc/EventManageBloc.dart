@@ -1,6 +1,11 @@
 import 'dart:async';
 import 'package:flutter_app2/Repository/EventRepository.dart';
 
+/*----------------------------------------------
+
+イベント管理Blocクラス
+
+----------------------------------------------*/
 class EventManageBloc {
   //イベント作成ページからpicker作成のためのprefCodeを受け取るStream
   final StreamController _lineApiController = StreamController<String>();
@@ -12,6 +17,7 @@ class EventManageBloc {
   //イベント作成ページからpicker作成のためのlineCodeを受け取るStream
   final StreamController _stationApiController = StreamController<String>();
   Sink get stationApiSink => _stationApiController.sink;
+
   //イベント作成ページへ駅Map<name,code>を返すStream
   final StreamController _stationMapController = StreamController<Map<String, String>>();
   Stream<Map<String, String>> get stationMapStream => _stationMapController.stream;
